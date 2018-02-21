@@ -34,11 +34,9 @@ function addItemToCarousel(carousel: typeof Carousel) {
  */
 export function renderCarouselSlides(
     carousel: typeof Carousel,
-    items: any[],
-    slideRenderer: (item: any) => View
+    items: View[],
 ): void {
     items
-        .map(slideRenderer)
         .map(carouselItemFromView)
         .map(addItemToCarousel(carousel));
 
