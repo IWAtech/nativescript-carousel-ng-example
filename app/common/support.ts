@@ -3,13 +3,13 @@ const Carousel = require('nativescript-carousel').Carousel;
 import { isAndroid } from "tns-core-modules/platform";
 import { View } from "tns-core-modules/ui/core/view";
 
-function carouselItemFromView(view: View) {
+export function carouselItemFromView(view: View) {
     const item = new CarouselItem();
     item.addChild(view);
     return item;
 }
 
-function addItemToCarousel(carousel: typeof Carousel) {
+export function addItemToCarousel(carousel: typeof Carousel) {
     return (item: typeof CarouselItem, index: number) => {
         carousel.addChild(item);
 

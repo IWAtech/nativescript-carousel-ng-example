@@ -1,0 +1,10 @@
+<Label [text]="category + count"></Label>
+<Button text="Click Me" (tap)="onTap($event)"></Button>
+
+<ListView [items]="myItems" (loadMoreItems)="loadMoreItems()">
+  <ng-template let-item="item">
+      <StackLayout >
+          <Image [src]='item.src' height="200"></Image>
+      </StackLayout>
+  </ng-template>
+</ListView>

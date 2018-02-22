@@ -3,7 +3,7 @@
 const Carousel = require('nativescript-carousel').Carousel;
 import { Component, OnInit, ComponentFactoryResolver, ViewContainerRef, Type, ComponentRef, ReflectiveInjector } from "@angular/core";
 import { EventData } from "tns-core-modules/data/observable";
-import { renderCarouselSlides } from "../common/support";
+import { renderCarouselSlides, addItemToCarousel, carouselItemFromView } from "../common/support";
 import { PercentLength } from "tns-core-modules/ui/styling/style-properties";
 import { Image } from "tns-core-modules/ui/image";
 import { GridLayout, GridUnitType, ItemSpec } from "tns-core-modules/ui/layouts/grid-layout";
@@ -33,6 +33,21 @@ interface ShowDialogOptions {
     templateUrl: "./home.component.html"
 })
 export class HomeComponent {
+
+    public categories = [
+      'abstract',
+      'animals',
+      'business',
+      'cats',
+      'city',
+      'food',
+      'nightlife',
+      'fashion',
+      'people',
+      'nature',
+      'sports',
+      'technics',
+      'transport'];
 
     loading = true;
 
@@ -65,6 +80,10 @@ export class HomeComponent {
         setTimeout(() => this.subject.complete(), 3000);
     }
 
+    getRandomCategory() {
+      return this.categories[Math.floor(Math.random() * this.categories.length)]
+    }
+
     onCarouselLoad(args: EventData): void {
         this.subject.subscribe({
             next: (data) => {
@@ -75,7 +94,7 @@ export class HomeComponent {
 
                 const promises = data.images.map(() => {
                   console.log('show modal rendering');
-                  return this.showModal(ItemComponent, {viewContainerRef: this.viewContainerRef});
+                  return this.showModal(ItemComponent, {viewContainerRef: this.viewContainerRef, context: { category: this.getRandomCategory()}});
                 });
 
                 Promise.all(promises).then((views) => {
@@ -84,6 +103,13 @@ export class HomeComponent {
                     carousel,
                     views
                   );
+
+                  setInterval(() => {
+                    this.showModal(ItemComponent, {viewContainerRef: this.viewContainerRef, context: { category: this.getRandomCategory()}}).then((view) => {
+                      const carouselItem = carouselItemFromView(view);
+                      addItemToCarousel(carousel)(carouselItem, carousel.getChildrenCount());
+                    });
+                  }, 5000);
                 }, (error) => {
                   console.log('error');
                   console.log(error);
