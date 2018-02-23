@@ -16,7 +16,7 @@ import { View } from "tns-core-modules/ui/core/view";
 import { DetachedLoader, PageFactory, PAGE_FACTORY, ModalDialogOptions, ModalDialogParams } from "nativescript-angular";
 
 // tslint:disable-next-line:interface-name
-interface ShowDialogOptions {
+interface ShowDialogOptions<T> {
   containerRef: ViewContainerRef;
   context: any;
   doneCallback;
@@ -24,7 +24,7 @@ interface ShowDialogOptions {
   pageFactory: PageFactory;
   parentPage: Page;
   resolver: ComponentFactoryResolver;
-  type: Type<any>;
+  type: Type<T>;
 }
 
 @Component({
@@ -52,6 +52,8 @@ export class HomeComponent {
     loading = true;
 
     private subject: Rx.Subject<{ images: { src: string; }[] }> = new Rx.AsyncSubject();
+
+    private carouselComponents: ComponentRef<ItemComponent>[] = [];
 
     constructor(
       private componentFactoryResolver: ComponentFactoryResolver,
@@ -97,15 +99,21 @@ export class HomeComponent {
                   return this.showModal(ItemComponent, {viewContainerRef: this.viewContainerRef, context: { category: this.getRandomCategory()}});
                 });
 
-                Promise.all(promises).then((views) => {
+                Promise.all(promises).then((componentRefs) => {
                   console.log('got views, rendering');
+                  const views = componentRefs.map((componentRef) => { return componentRef.location.nativeElement })
+                  componentRefs.forEach((ref) => {
+                    this.carouselComponents.push(ref);
+                  });
                   renderCarouselSlides(
                     carousel,
                     views
                   );
 
                   setInterval(() => {
-                    this.showModal(ItemComponent, {viewContainerRef: this.viewContainerRef, context: { category: this.getRandomCategory()}}).then((view) => {
+                    this.showModal(ItemComponent, {viewContainerRef: this.viewContainerRef, context: { category: this.getRandomCategory()}}).then((componentRef) => {
+                      this.carouselComponents.push(componentRef);
+                      const view = componentRef.location.nativeElement
                       const carouselItem = carouselItemFromView(view);
                       addItemToCarousel(carousel)(carouselItem, carousel.getChildrenCount());
                     });
@@ -115,51 +123,33 @@ export class HomeComponent {
                   console.log(error);
                 });
 
-                // renderCarouselSlides(
-                //     carousel,
-                //     data.images,
-                    // (imageData: { src: string }) => {
-                    //     const layout = new GridLayout();
-                    //     layout.addRow(new ItemSpec(1, GridUnitType.AUTO));
-                    //     layout.addColumn(new ItemSpec(1, GridUnitType.STAR));
+                carousel.on(Carousel.pageChangedEvent, (event) => {
+                  const index: number = event.index + 0;
+                  console.log('Got Page Changed Event' + index);
 
-                    //     layout.addEventListener(Button.tapEvent, (data: EventData) => {
-                    //         alert(imageData.src);
-                    //     });
+                  if(this.carouselComponents.length > index) {
+                    this.carouselComponents[index].instance.isActive()
+                  } else {
+                    console.log('carouselcomponents to small ' + this.carouselComponents.length);
+                  }
 
-                    //     // const factory = this.componentFactoryResolver.resolveComponentFactory(ItemComponent);
-                    //     // const image = this.viewContainerRef.createComponent(factory);
-                    //     // image.instance.loadComponent()
 
-                    //     this.showModal(ItemComponent, {viewContainerRef: this.viewContainerRef}).then((view: View) => {
-                    //       layout.addChild(view);
-                    //     });
+                  // console.log(JSON.stringify(event));
+                });
 
-                    //     // const image = new Image();
-                    //     // image.width = PercentLength.parse('100%');
-                    //     // image.height = carousel.height;
-                    //     // image.src = imageData.src;
-                    //     // image.className = 'image';
-                    //     // image.stretch = 'aspectFill';
-                    //     // image.loadMode = 'async';
-                    //     GridLayout.setRow(image, 0);
-                    //     GridLayout.setRowSpan(image, 1);
-                    //     GridLayout.setColumn(image, 0);
-                    //     GridLayout.setColumnSpan(image, 0);
-                    //     layout.addChild(image);
-
-                    //     return layout;
-                    // }
-                // );
+                // carousel.on(Carousel.pageScrollStateChangedEvent, (event) => {
+                //   console.log('Got Page Scroll Changed Event');
+                //   console.log(JSON.stringify(event));
+                // });
             },
         });
     }
 
 
 
-      public showModal(type: Type<any>,
+      public showModal<T>(type: Type<T>,
           {viewContainerRef, moduleRef, context, fullscreen}: ModalDialogOptions
-      ): Promise<any> {
+      ): Promise<ComponentRef<T>> {
           if (!viewContainerRef) {
               throw new Error(
                   "No viewContainerRef: " +
@@ -189,7 +179,7 @@ export class HomeComponent {
           });
       }
 
-      private static showDialog({
+      private static showDialog<T>({
           containerRef,
           context,
           doneCallback,
@@ -198,7 +188,7 @@ export class HomeComponent {
           parentPage,
           resolver,
           type,
-      }: ShowDialogOptions): Promise<View> {
+      }: ShowDialogOptions<T>): Promise<ComponentRef<T>> {
           console.log("showDialog called");
           const page = pageFactory({ isModal: true, componentType: type });
 
@@ -230,7 +220,7 @@ export class HomeComponent {
                   (<any>componentView.parent).removeChild(componentView);
               }
 
-              return componentView;
+              return compRef;
 
               // page.content = componentView;
               // parentPage.showModal(page, context, closeCallback, fullscreen);

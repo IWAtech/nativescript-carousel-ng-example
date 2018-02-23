@@ -37,4 +37,8 @@ export class ItemComponent implements OnInit {
   getSampleImage() {
     return {src: 'https://lorempixel.com/800/600/' + this.category + '/' + Math.round(Math.random() * 10) + '/'};
   }
+
+  isActive() {
+    console.log('ItemComponent isactive called');
+  }
 }
